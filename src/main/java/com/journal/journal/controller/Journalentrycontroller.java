@@ -5,6 +5,8 @@ import java.util.*;
 
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,40 +25,70 @@ public class Journalentrycontroller {
     @Autowired
     JournalEntryservices jsr;
 
+    // @GetMapping("/{user_id}")
     @GetMapping
-    public List<Journalentry> getAllEntries() {
-        return jsr.Getall();
+    public ResponseEntity<List<Journalentry>> getAllEntries(@PathVariable ObjectId user_id) {
+        try {
+            List<Journalentry> entries = jsr.Getall(user_id);
+            return new ResponseEntity<>(entries, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
     }
 
+    // (/{user_id})
     @PostMapping
-    public Journalentry createEntry(@RequestBody Journalentry entry) {
-        entry.setDate(LocalDateTime.now());
-        Journalentry res = jsr.Createnew(entry);
-        return res;
+    public ResponseEntity<Journalentry> createEntry(@PathVariable ObjectId u_id, @RequestBody Journalentry entry) {
+        try {
+            entry.setDate(LocalDateTime.now());
+            entry.setUserId(u_id);
+            Journalentry res = jsr.Createnew(entry);
+            return new ResponseEntity<>(res, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping("/{id}")
-    public Journalentry getentry(@PathVariable ObjectId id) {
-        return jsr.getbyid(id).orElse(null);
+    public ResponseEntity<Journalentry> getentry(@PathVariable ObjectId id) {
+        // return jsr.getbyid(id).orElse(null);
+        Optional<Journalentry> entry = jsr.getbyid(id);
+        if (entry.isPresent()) {
+            return new ResponseEntity<>(entry.get(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @DeleteMapping("/{id}")
-    public String deleteEntry(@PathVariable ObjectId id) {
-        return jsr.delete(id);
+    public ResponseEntity<String> deleteEntry(@PathVariable ObjectId id) {
+        try {
+            return new ResponseEntity<>(jsr.delete(id), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PutMapping("/{id}")
-    public Journalentry upddate(@RequestBody Journalentry newEntry, @PathVariable ObjectId id) {
-        Journalentry old = jsr.getbyid(id).orElse(null);
-        if (old != null) {
-            old.setContent(newEntry.getContent() != null && !newEntry.getContent().equals("") ? newEntry.getContent()
-                    : old.getContent());
-            old.setTitle(newEntry.getTitle() != null && !newEntry.getTitle().equals("") ? newEntry.getTitle()
-                    : old.getTitle());
+    public ResponseEntity<Journalentry> upddate(@RequestBody Journalentry newEntry, @PathVariable ObjectId id) {
+        try {
+            Journalentry old = jsr.getbyid(id).orElse(null);
+            if (old != null) {
+                old.setContent(
+                        newEntry.getContent() != null && !newEntry.getContent().equals("") ? newEntry.getContent()
+                                : old.getContent());
+                old.setTitle(newEntry.getTitle() != null && !newEntry.getTitle().equals("") ? newEntry.getTitle()
+                        : old.getTitle());
+                jsr.Createnew(old);
+                return new ResponseEntity<>(old, HttpStatus.OK);
+            }
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        jsr.Createnew(old);
-        return old;
+
     }
 
 }

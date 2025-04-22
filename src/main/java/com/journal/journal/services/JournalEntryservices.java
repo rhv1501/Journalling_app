@@ -26,8 +26,8 @@ public class JournalEntryservices {
         }
     }
 
-    public List<Journalentry> Getall() {
-        return jr.findAll();
+    public List<Journalentry> Getall(ObjectId user_Id) {
+        return jr.findByUserId(user_Id);
     }
 
     public String delete(ObjectId id) {
