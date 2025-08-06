@@ -19,6 +19,5 @@ public class Journalentry {
     private String title;
     private String content;
     private LocalDateTime date;
-    @DBRef
     private ObjectId userId;
 }

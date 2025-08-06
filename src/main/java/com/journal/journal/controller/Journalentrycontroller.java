@@ -25,24 +25,26 @@ public class Journalentrycontroller {
     @Autowired
     JournalEntryservices jsr;
 
-    // @GetMapping("/{user_id}")
-    @GetMapping
+    // Get all journal entries for a specific user
+    @GetMapping("/{user_id}")
     public ResponseEntity<List<Journalentry>> getAllEntries(@PathVariable ObjectId user_id) {
         try {
             List<Journalentry> entries = jsr.Getall(user_id);
             return new ResponseEntity<>(entries, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 
-    // (/{user_id})
-    @PostMapping
-    public ResponseEntity<Journalentry> createEntry(@PathVariable ObjectId u_id, @RequestBody Journalentry entry) {
+    // Create a new journal entry for a specific user
+    @PostMapping("/{u_id}")
+    public ResponseEntity<Journalentry> createEntry(@PathVariable String u_id, @RequestBody Journalentry entry) {
         try {
             entry.setDate(LocalDateTime.now());
-            entry.setUserId(u_id);
+            ObjectId userId = new ObjectId(u_id);
+            entry.setUserId(userId);
             Journalentry res = jsr.Createnew(entry);
             return new ResponseEntity<>(res, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -50,9 +52,8 @@ public class Journalentrycontroller {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/entry/{id}")
     public ResponseEntity<Journalentry> getentry(@PathVariable ObjectId id) {
-        // return jsr.getbyid(id).orElse(null);
         Optional<Journalentry> entry = jsr.getbyid(id);
         if (entry.isPresent()) {
             return new ResponseEntity<>(entry.get(), HttpStatus.OK);
@@ -61,7 +62,7 @@ public class Journalentrycontroller {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/entry/{id}")
     public ResponseEntity<String> deleteEntry(@PathVariable ObjectId id) {
         try {
             return new ResponseEntity<>(jsr.delete(id), HttpStatus.OK);
@@ -70,7 +71,7 @@ public class Journalentrycontroller {
         }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/entry/{id}")
     public ResponseEntity<Journalentry> upddate(@RequestBody Journalentry newEntry, @PathVariable ObjectId id) {
         try {
             Journalentry old = jsr.getbyid(id).orElse(null);
